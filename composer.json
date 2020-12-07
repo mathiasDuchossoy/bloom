@@ -1,0 +1,53 @@
+{
+    "name": "bloomatwork/test-mickael",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Pierre Lemée",
+            "email": "pierre@bloom-at-work.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "BloomAtWork\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "BloomAtWork\\Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": "7.3.*",
+        "sensio/framework-extra-bundle": "^5.5",
+        "symfony/dotenv": "4.4.*",
+        "symfony/flex": "^1.0",
+        "symfony/framework-bundle": "^4.4",
+        "symfony/yaml": "^4.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.5",
+        "symfony/browser-kit": "^4.4",
+        "symfony/debug-pack": "^1.0",
+        "symfony/error-handler": "4.4.*",
+        "symfony/web-server-bundle": "^4.4"
+    },
+    "config": {
+        "preferred-install": {
+            "*": "dist"
+        },
+        "sort-packages": true
+    },
+    "extra": {
+        "symfony": {
+            "allow-contrib": false,
+            "require": "4.4.*"
+        }
+    },
+    "scripts": {
+        "auto-scripts": {
+            "cache:clear": "symfony-cmd",
+            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+        }
+    }
+}
