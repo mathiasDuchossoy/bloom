@@ -74,7 +74,7 @@ class QuestionStatsController extends AbstractController
 
             return $this->json($response);
         } catch (\Exception $exception) {
-            return $this->json(['error' => $exception->getMessage()]);
+            return $this->json(['error' => $exception->getMessage()], $exception->getCode());
         }
     }
 }

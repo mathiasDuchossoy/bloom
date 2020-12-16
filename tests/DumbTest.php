@@ -4,6 +4,7 @@ namespace BloomAtWork\Tests;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\Response;
 
 class DumbTest extends WebTestCase
 {
@@ -29,9 +30,27 @@ class DumbTest extends WebTestCase
             'POST',
             '/question-stats/csv/upload',
             [],
-            [new UploadedFile($fileName, 'file.csv')]
+            ['file' => new UploadedFile($fileName, 'file.csv')]
         );
 
-        $this->assertEquals(200, $client->getResponse()->getStatusCode());
+        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseHeaderSame('Content-Type', 'application/json');
+
+        $content = $client->getResponse()->getContent();
+        $this->assertJson($content);
+
+        $content = json_decode($content, true);
+
+        $this->assertArrayHasKey('question', $content);
+        $this->assertArrayHasKey('label', $content['question']);
+        $this->assertArrayHasKey('statistics', $content['question']);
+        $this->assertArrayHasKey('min', $content['question']['statistics']);
+        $this->assertArrayHasKey('max', $content['question']['statistics']);
+        $this->assertArrayHasKey('mean', $content['question']['statistics']);
+
+        $this->assertEquals('Coucou Hibou', $content['question']['label']);
+        $this->assertEquals(1, $content['question']['statistics']['min']);
+        $this->assertEquals(2, $content['question']['statistics']['max']);
+        $this->assertEquals(1.5, $content['question']['statistics']['mean']);
     }
 }
