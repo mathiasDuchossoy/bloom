@@ -51,8 +51,14 @@ class QuestionStatsController extends AbstractController
             $question = new Question($label);
 
             foreach ($records as $record) {
-                $response = new Response($record['value']);
-                $question->addResponse($response);
+                $value = $record['value'];
+                if (filter_var($value, FILTER_VALIDATE_FLOAT)) {
+                    if (0 <= $value && $value <= 10)
+                    {
+                        $response = new Response($record['value']);
+                        $question->addResponse($response);
+                    }
+                }
             }
 
             $response = [
