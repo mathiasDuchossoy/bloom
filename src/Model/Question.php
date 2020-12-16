@@ -8,23 +8,40 @@ class Question extends AbstractQuestion
 {
     private array $responses = [];
 
-    private function addResponse(Response $response)
+    public function addResponse(Response $response): self
     {
         $this->responses[] = $response;
+        return $this;
     }
 
     public function getMin(): float
     {
-        // TODO: Implement getMin() method.
+        $min = $this->responses[0]->getNote();
+        foreach ($this->responses as $response) {
+            $min = $min > $response->getNote() ? $response->getNote() : $min;
+        }
+        return $min;
     }
 
     public function getMax(): float
     {
-        // TODO: Implement getMax() method.
+        $max = $this->responses[0]->getNote();
+        foreach ($this->responses as $response) {
+            $max = $max < $response->getNote() ? $response->getNote() : $max;
+        }
+        return $max;
     }
 
     public function getMean(): float
     {
-        // TODO: Implement getMean() method.
+        $notes = [];
+        foreach ($this->responses as $response) {
+            $notes[] = $response->getNote();
+        }
+
+        $notes = array_filter($notes);
+
+        $average = array_sum($notes) / count($notes);
+        return round($average, 2);
     }
 }

@@ -3,6 +3,8 @@
 
 namespace BloomAtWork\Controller;
 
+use BloomAtWork\Model\Question;
+use BloomAtWork\Model\Response;
 use League\Csv\Reader;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -21,11 +23,8 @@ class QuestionStatsController extends AbstractController
 {
     /**
      * @Route("/csv/upload", name="question_stats_upload", methods={"POST"})
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
-    public function readFile(Request $request)
+    public function readFile(Request $request): JsonResponse
     {
         try {
             /** @var UploadedFile $uploadedFile */
@@ -47,11 +46,27 @@ class QuestionStatsController extends AbstractController
 
             $header = $csv->getHeader();
             $records = $csv->getRecords(['value']);
-            $label = str_replace('# ','', $header[0]);
+            $label = str_replace('# ', '', $header[0]);
+
+            $question = new Question($label);
 
             foreach ($records as $record) {
-
+                $response = new Response($record['value']);
+                $question->addResponse($response);
             }
+
+            $response = [
+                'question' => [
+                    'label' => $label,
+                    'statistics' => [
+                        'min' => $question->getMin(),
+                        'max' => $question->getMax(),
+                        'mean' => $question->getMean(),
+                    ],
+                ],
+            ];
+
+            return $this->json($response);
         } catch (\Exception $exception) {
             return $this->json(['error' => $exception->getMessage()]);
         }
