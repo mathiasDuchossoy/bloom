@@ -6,6 +6,8 @@ namespace BloomAtWork\Controller;
 use BloomAtWork\Exception\ApiProblemException;
 use BloomAtWork\Model\ApiProblem;
 use BloomAtWork\Service\QuestionStatsService;
+use Exception;
+use League\Csv\Reader;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,34 +26,39 @@ class QuestionStatsController extends AbstractController
     /**
      * @Route("/csv/upload", name="question_stats_upload", methods={"POST"})
      */
-    public function readFile(Request $request, QuestionStatsService $service): ?JsonResponse
+    public function readFile(Request $request, QuestionStatsService $service): JsonResponse
     {
         try {
             /** @var UploadedFile $uploadedFile */
-            $uploadedFile = $request->files->get('file');
-            if (!$uploadedFile) {
+            if (!$uploadedFile = $request->files->get('file')) {
                 throw new BadRequestHttpException('"file" is required');
             }
 
-            $service->validateExtension($uploadedFile->getClientOriginalName());
+            if (!$service->validateExtension($uploadedFile->getClientOriginalName())) {
+                throw new BadRequestHttpException('csv file is required');
+            }
 
-            $question = $service->createQuestionResponseFromUploadFile($uploadedFile);
+            $csv = Reader::createFromPath($uploadedFile->getPathname(), 'r');
+
+            $question = $service->createQuestionFromCsv($csv);
+
+            $service->addResponsesFromCsv($question, $csv);
 
             $stats = $service->getStats($question);
 
             return $this->json($stats);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             $this->throwApiProblemValidationException($exception);
         }
     }
 
-    private function throwApiProblemValidationException($exception)
+    private function throwApiProblemValidationException(Exception $exception): void
     {
         $apiProblem = new ApiProblem(
             $exception,
             ApiProblem::TYPE_VALIDATION_ERROR
         );
-        $apiProblem->set('errors', $exception->getMessage());
+        $apiProblem->set('error', $exception->getMessage());
 
         throw new ApiProblemException($apiProblem);
     }
