@@ -3,9 +3,8 @@
 
 namespace BloomAtWork\Controller;
 
-use BloomAtWork\Model\Question;
-use BloomAtWork\Model\Response;
-use League\Csv\Reader;
+use BloomAtWork\Exception\JsonResponseException;
+use BloomAtWork\Service\QuestionStatsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,7 +23,7 @@ class QuestionStatsController extends AbstractController
     /**
      * @Route("/csv/upload", name="question_stats_upload", methods={"POST"})
      */
-    public function readFile(Request $request): JsonResponse
+    public function readFile(Request $request, QuestionStatsService $service): JsonResponse
     {
         try {
             /** @var UploadedFile $uploadedFile */
@@ -33,48 +32,15 @@ class QuestionStatsController extends AbstractController
                 throw new BadRequestHttpException('"file" is required');
             }
 
-            $fileName = $uploadedFile->getClientOriginalName();
-            $array = explode(".", $fileName);
-            $extension = end($array);
+            $service->validateExtension($uploadedFile->getClientOriginalName());
 
-            if ('csv' !== $extension) {
-                throw new BadRequestHttpException('csv file is required');
-            }
+            $question = $service->createQuestionResponseFromUploadFile($uploadedFile);
 
-            $csv = Reader::createFromPath($uploadedFile->getPathname(), 'r');
-            $csv->setHeaderOffset(0);
-
-            $header = $csv->getHeader();
-            $records = $csv->getRecords(['value']);
-            $label = str_replace('# ', '', $header[0]);
-
-            $question = new Question($label);
-
-            foreach ($records as $record) {
-                $value = $record['value'];
-                if (filter_var($value, FILTER_VALIDATE_FLOAT)) {
-                    if (0 <= $value && $value <= 10)
-                    {
-                        $response = new Response($record['value']);
-                        $question->addResponse($response);
-                    }
-                }
-            }
-
-            $response = [
-                'question' => [
-                    'label' => $label,
-                    'statistics' => [
-                        'min' => $question->getMin(),
-                        'max' => $question->getMax(),
-                        'mean' => $question->getMean(),
-                    ],
-                ],
-            ];
+            $response = $service->getStats($question);
 
             return $this->json($response);
         } catch (\Exception $exception) {
-            return $this->json(['error' => $exception->getMessage()], $exception->getCode());
+            return (new JsonResponseException($exception))->getResponse();
         }
     }
 }
