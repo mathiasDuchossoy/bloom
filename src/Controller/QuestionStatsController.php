@@ -24,6 +24,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class QuestionStatsController extends AbstractController
 {
     /**
+     * Reads the file and returns the statistics of the question
      * @Route("/csv/upload", name="question_stats_upload", methods={"POST"})
      */
     public function readFile(Request $request, QuestionStatsService $service): JsonResponse
@@ -52,6 +53,10 @@ class QuestionStatsController extends AbstractController
         }
     }
 
+    /**
+     * Throws API problem validation exception
+     * @param Exception $exception
+     */
     private function throwApiProblemValidationException(Exception $exception): void
     {
         $apiProblem = new ApiProblem(
