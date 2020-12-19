@@ -3,7 +3,8 @@
 
 namespace BloomAtWork\Controller;
 
-use BloomAtWork\Exception\JsonResponseException;
+use BloomAtWork\Exception\ApiProblemException;
+use BloomAtWork\Model\ApiProblem;
 use BloomAtWork\Service\QuestionStatsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -23,7 +24,7 @@ class QuestionStatsController extends AbstractController
     /**
      * @Route("/csv/upload", name="question_stats_upload", methods={"POST"})
      */
-    public function readFile(Request $request, QuestionStatsService $service): JsonResponse
+    public function readFile(Request $request, QuestionStatsService $service): ?JsonResponse
     {
         try {
             /** @var UploadedFile $uploadedFile */
@@ -36,11 +37,22 @@ class QuestionStatsController extends AbstractController
 
             $question = $service->createQuestionResponseFromUploadFile($uploadedFile);
 
-            $response = $service->getStats($question);
+            $stats = $service->getStats($question);
 
-            return $this->json($response);
+            return $this->json($stats);
         } catch (\Exception $exception) {
-            return (new JsonResponseException($exception))->getResponse();
+            $this->throwApiProblemValidationException($exception);
         }
+    }
+
+    private function throwApiProblemValidationException($exception)
+    {
+        $apiProblem = new ApiProblem(
+            $exception,
+            ApiProblem::TYPE_VALIDATION_ERROR
+        );
+        $apiProblem->set('errors', $exception->getMessage());
+
+        throw new ApiProblemException($apiProblem);
     }
 }
