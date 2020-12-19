@@ -3,8 +3,10 @@
 
 namespace BloomAtWork\Controller;
 
-use BloomAtWork\Model\Question;
-use BloomAtWork\Model\Response;
+use BloomAtWork\Exception\ApiProblemException;
+use BloomAtWork\Model\ApiProblem;
+use BloomAtWork\Service\QuestionStatsService;
+use Exception;
 use League\Csv\Reader;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -22,59 +24,47 @@ use Symfony\Component\Routing\Annotation\Route;
 class QuestionStatsController extends AbstractController
 {
     /**
+     * Reads the file and returns the statistics of the question
      * @Route("/csv/upload", name="question_stats_upload", methods={"POST"})
      */
-    public function readFile(Request $request): JsonResponse
+    public function readFile(Request $request, QuestionStatsService $service): JsonResponse
     {
         try {
             /** @var UploadedFile $uploadedFile */
-            $uploadedFile = $request->files->get('file');
-            if (!$uploadedFile) {
+            if (!$uploadedFile = $request->files->get('file')) {
                 throw new BadRequestHttpException('"file" is required');
             }
 
-            $fileName = $uploadedFile->getClientOriginalName();
-            $array = explode(".", $fileName);
-            $extension = end($array);
-
-            if ('csv' !== $extension) {
+            if (!$service->validateExtension($uploadedFile->getClientOriginalName())) {
                 throw new BadRequestHttpException('csv file is required');
             }
 
             $csv = Reader::createFromPath($uploadedFile->getPathname(), 'r');
-            $csv->setHeaderOffset(0);
 
-            $header = $csv->getHeader();
-            $records = $csv->getRecords(['value']);
-            $label = str_replace('# ', '', $header[0]);
+            $question = $service->createQuestionFromCsv($csv);
 
-            $question = new Question($label);
+            $service->addResponsesFromCsv($question, $csv);
 
-            foreach ($records as $record) {
-                $value = $record['value'];
-                if (filter_var($value, FILTER_VALIDATE_FLOAT)) {
-                    if (0 <= $value && $value <= 10)
-                    {
-                        $response = new Response($record['value']);
-                        $question->addResponse($response);
-                    }
-                }
-            }
+            $stats = $service->getStats($question);
 
-            $response = [
-                'question' => [
-                    'label' => $label,
-                    'statistics' => [
-                        'min' => $question->getMin(),
-                        'max' => $question->getMax(),
-                        'mean' => $question->getMean(),
-                    ],
-                ],
-            ];
-
-            return $this->json($response);
-        } catch (\Exception $exception) {
-            return $this->json(['error' => $exception->getMessage()], $exception->getCode());
+            return $this->json($stats);
+        } catch (Exception $exception) {
+            $this->throwApiProblemValidationException($exception);
         }
+    }
+
+    /**
+     * Throws API problem validation exception
+     * @param Exception $exception
+     */
+    private function throwApiProblemValidationException(Exception $exception): void
+    {
+        $apiProblem = new ApiProblem(
+            $exception,
+            ApiProblem::TYPE_VALIDATION_ERROR
+        );
+        $apiProblem->set('error', $exception->getMessage());
+
+        throw new ApiProblemException($apiProblem);
     }
 }

@@ -6,7 +6,10 @@ namespace BloomAtWork\Model;
 
 class Response
 {
-    private float $note;
+    /**
+     * @var float
+     */
+    private $note;
 
     public function __construct(float $note)
     {

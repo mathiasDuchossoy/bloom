@@ -6,7 +6,10 @@ namespace BloomAtWork\Model;
 
 class Question extends AbstractQuestion
 {
-    private array $responses = [];
+    /**
+     * @var array
+     */
+    private $responses = [];
 
     public function addResponse(Response $response): self
     {

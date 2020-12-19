@@ -23,14 +23,6 @@ abstract class AbstractQuestion
     }
 
     /**
-     * @param string $label
-     */
-    public function setLabel($label)
-    {
-        $this->label = $label;
-    }
-
-    /**
      * @return float
      */
     public abstract function getMin(): float;
