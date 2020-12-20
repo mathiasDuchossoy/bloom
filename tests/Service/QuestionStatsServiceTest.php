@@ -62,7 +62,10 @@ class QuestionStatsServiceTest extends TestCase
     {
         $isValid = $this->service->validateExtension('my-test-file.csv');
         $this->assertTrue($isValid);
+    }
 
+    public function testValidateExtensionWithTxtFileName()
+    {
         $isValid = $this->service->validateExtension('my-test-file.txt');
         $this->assertFalse($isValid);
     }
@@ -90,6 +93,16 @@ class QuestionStatsServiceTest extends TestCase
 
         $response = $method->invoke($this->service, 1);
         $this->assertInstanceOf(Response::class, $response);
+    }
+
+
+    public function testCreateResponseWithNegativeNote()
+    {
+        $question = $this->service->createQuestionFromCsv($this->csv);
+        $this->service->addResponsesFromCsv($question, $this->csv);
+
+        $method = new ReflectionMethod(QuestionStatsService::class, 'createResponse');
+        $method->setAccessible(true);
 
         $response = $method->invoke($this->service, -1);
         $this->assertFalse($response);
@@ -102,12 +115,30 @@ class QuestionStatsServiceTest extends TestCase
 
         $isValid = $method->invoke($this->service, 1);
         $this->assertTrue($isValid);
+    }
+
+    public function testValidateNoteWithNegativeNote()
+    {
+        $method = new ReflectionMethod(QuestionStatsService::class, 'validateNote');
+        $method->setAccessible(true);
 
         $isValid = $method->invoke($this->service, -1);
         $this->assertFalse($isValid);
+    }
+
+    public function testValidateNoteWithHigherNote()
+    {
+        $method = new ReflectionMethod(QuestionStatsService::class, 'validateNote');
+        $method->setAccessible(true);
 
         $isValid = $method->invoke($this->service, 11);
         $this->assertFalse($isValid);
+    }
+
+    public function testValidateNoteWithStringNote()
+    {
+        $method = new ReflectionMethod(QuestionStatsService::class, 'validateNote');
+        $method->setAccessible(true);
 
         $isValid = $method->invoke($this->service, 'ko');
         $this->assertFalse($isValid);

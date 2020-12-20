@@ -10,7 +10,7 @@ class QuestionStatsControllerTest extends WebTestCase
     /**
      * @return array
      */
-    public function readFileCsvData()
+    public function readFileData()
     {
         return [
             'coucou hibou' => [__DIR__ . '/../csv/my-test-file.csv'],
@@ -18,17 +18,7 @@ class QuestionStatsControllerTest extends WebTestCase
     }
 
     /**
-     * @return array
-     */
-    public function readFileTxtData()
-    {
-        return [
-            'text file' => [__DIR__ . '/../csv/my-test-file.txt'],
-        ];
-    }
-
-    /**
-     * @dataProvider readFileCsvData
+     * @dataProvider readFileData
      *
      * @param string $fileName
      */
@@ -42,6 +32,7 @@ class QuestionStatsControllerTest extends WebTestCase
             ['file' => new UploadedFile($fileName, 'file.csv')]
         );
 
+        $this->assertResponseIsSuccessful();
         $this->assertResponseStatusCodeSame(200);
         $this->assertResponseHeaderSame('Content-Type', 'application/json');
 
@@ -64,7 +55,7 @@ class QuestionStatsControllerTest extends WebTestCase
     }
 
     /**
-     * @dataProvider readFileTxtData
+     * @dataProvider readFileData
      *
      * @param string $fileName
      */
